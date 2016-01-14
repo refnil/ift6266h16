@@ -1,0 +1,1 @@
+: foreach *.info |> xargs wget -O %B.data < %f |> %B.data
