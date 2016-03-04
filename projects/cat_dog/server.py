@@ -1,4 +1,4 @@
-from datastream import GetStream
+from datastream import get_dvc
 import argparse
 from threading import Thread
 from fuel.server import start_server as fuel_start_server
@@ -23,7 +23,7 @@ if __name__=="__main__":
     args = vars(parser.parse_args())
     args= {k:v for k,v in args.items() if v is not None}
 
-    streams = GetStream(**args)
+    streams = get_dvc(**args)
     for t in enumerate(streams):
         Thread(target=start_server, args = t).start()
 

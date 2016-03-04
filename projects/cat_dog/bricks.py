@@ -65,6 +65,7 @@ class CheckpointBest(Checkpoint):
 
     def __init__(self, notification_name, path, **kwargs):
         self.notification_name = notification_name
+        kwargs.setdefault("after_epoch",True)
         super(CheckpointBest, self).__init__(path, **kwargs)
 
     def do(self, which_callback, *args):

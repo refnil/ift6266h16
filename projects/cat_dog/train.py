@@ -14,18 +14,14 @@ from blocks.algorithms import GradientDescent, Scale
 from blocks.extensions.monitoring import DataStreamMonitoring
 from blocks.extensions.saveload import Checkpoint
 from blocks.extensions.training import TrackTheBest
-from blocks.bricks.cost import CategoricalCrossEntropy
+from blocks.bricks.cost import CategoricalCrossEntropy, MisclassificationRate
 from blocks.roles import WEIGHT
 from blocks.graph import ComputationGraph
 from blocks.filter import VariableFilter
 
 from bricks import FinishIfNoImprovementAfterPlus, CheckpointBest
 
-
-def valid(net, train_stream, test_stream, **kwargs):
-    pass
-
-def train_net(net, train_stream, test_stream, L2=False, early_stopping=False,
+def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stopping=False,
         finish=None,
         **ignored):
     x = tensor.matrix('features')
@@ -37,14 +33,24 @@ def train_net(net, train_stream, test_stream, L2=False, early_stopping=False,
     cost_before = CategoricalCrossEntropy().apply(y.flatten(), y_hat)
     cost_before.name = "cost_without_regularization"
 
+    #Error
+    #Taken from brodesf
+    error = MisclassificationRate().apply(y.flatten(), y_hat)
+    error.name = "Misclassification rate"
+
     #Regularization
     cg = ComputationGraph(cost_before)
     WS = VariableFilter(roles=[WEIGHT])(cg.variables)
 
+    if L1:
+        L1_reg = 0.005 * sum([abs(W).sum() for W in WS])
+        L1_reg.name = "L1 regularization"
+        cost_before += L1_reg
+
     if L2:
-        L2 = sum([0.005 * (W ** 2).sum() for W in WS])
-        L2.name = "L2 regularization"
-        cost_before += L2
+        L2_reg = 0.005 * sum([(W ** 2).sum() for W in WS])
+        L2_reg.name = "L2 regularization"
+        cost_before += L2_reg
 
     cost = cost_before
     cost.name = 'cost_with_regularization'
@@ -58,7 +64,7 @@ def train_net(net, train_stream, test_stream, L2=False, early_stopping=False,
     extensions = []
 
     #Monitoring
-    monitor = DataStreamMonitoring(variables=[cost], data_stream=test_stream, prefix="test")
+    monitor = DataStreamMonitoring(variables=[cost, error], data_stream=test_stream, prefix="test")
     extensions.append(monitor)
 
     def filename(suffix=""):
@@ -91,13 +97,20 @@ def train_net(net, train_stream, test_stream, L2=False, early_stopping=False,
 
     main_loop.run()
 
-def check():
+def net_dvc():
     pass
+
+def net_mnist():
+    return  MLP(activations=[Rectifier(), Softmax()],
+              dims=[784, 100, 10],
+              weights_init=IsotropicGaussian(),
+              biases_init=Constant(0.))
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='train')
     parser.add_argument('-p', '--parallel', action='store_true')
     parser.add_argument('-m', '--mnist', action='store_true')
+    parser.add_argument('--L1', action='store_true')
     parser.add_argument('--L2', action='store_true')
     parser.add_argument('-e', '--early_stopping', action='store_true')
     parser.add_argument('--finish', type=int)
@@ -105,11 +118,9 @@ if __name__=="__main__":
 
     if args.mnist:
         train, test = get_mnist()
-        net = MLP(activations=[Rectifier(), Softmax()],
-                  dims=[784, 100, 10],
-                  weights_init=IsotropicGaussian(),
-                  biases_init=Constant(0.01))
+        net = net_mnist()
     else:
+        net = net_dvc()
         if args.parallel:
             train = ServerDataStream(('train',), True, port=5571)
             test = ServerDataStream(('test',), True, port=5572)
