@@ -7,6 +7,7 @@ import time
 from theano import tensor
 from blocks.bricks import Rectifier, Softmax
 from blocks.bricks import MLP
+from blocks.bricks.conv import ConvolutionalSequence, Convolution, MaxPooling
 from blocks.initialization import IsotropicGaussian, Constant
 from blocks.main_loop import MainLoop
 from blocks.extensions import FinishAfter, Printing, Timing
@@ -16,13 +17,13 @@ from blocks.extensions.saveload import Checkpoint
 from blocks.extensions.training import TrackTheBest
 from blocks.bricks.cost import CategoricalCrossEntropy, MisclassificationRate
 from blocks.roles import WEIGHT
-from blocks.graph import ComputationGraph
+from blocks.graph import ComputationGraph, apply_dropout
 from blocks.filter import VariableFilter
 
 from bricks import FinishIfNoImprovementAfterPlus, CheckpointBest
 
 def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stopping=False,
-        finish=None,
+        finish=None, dropout=False,
         **ignored):
     x = tensor.matrix('features')
     y = tensor.lmatrix('targets')
@@ -41,6 +42,9 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
     #Regularization
     cg = ComputationGraph(cost_before)
     WS = VariableFilter(roles=[WEIGHT])(cg.variables)
+
+    if dropout:
+        cg = apply_dropout(cg, WS, 0.5)
 
     if L1:
         L1_reg = 0.005 * sum([abs(W).sum() for W in WS])
@@ -98,6 +102,14 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
     main_loop.run()
 
 def net_dvc():
+    convos = [9,7,5,3]
+    pools = [5,5,5,5]
+
+    tuplify = lambda x: (x,x)
+    map(tuplify, convo)
+    map(tuplify, pools)
+
+
     pass
 
 def net_mnist():
@@ -113,6 +125,7 @@ if __name__=="__main__":
     parser.add_argument('--L1', action='store_true')
     parser.add_argument('--L2', action='store_true')
     parser.add_argument('-e', '--early_stopping', action='store_true')
+    parser.add_argument('-d', '--dropout', action='store_true')
     parser.add_argument('--finish', type=int)
     args = parser.parse_args()
 
