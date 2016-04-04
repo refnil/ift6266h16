@@ -5,10 +5,10 @@ from fuel.transformers import Flatten
 from transformer import ResizeTransformer
 
 
-def get_dvc(image_size=(32,32), batch_size=32, scheme=ShuffledScheme):
-    train = DogsVsCats(('train',), subset=slice(0, 20000))
-    test = DogsVsCats(('test',))
-    validation = DogsVsCats(('train',), subset=slice(20000, 25000))
+def get_dvc(image_size=(32,32), batch_size=64, scheme=ShuffledScheme):
+    train = DogsVsCats(('train',), subset=slice(0, 22500))
+    test = DogsVsCats(('test',), )
+    validation = DogsVsCats(('train',), subset=slice(22500, 25000))
 
     def ResizeAndStream(dataset):
         stream = DataStream.default_stream(dataset, iteration_scheme=scheme(dataset.num_examples, batch_size))

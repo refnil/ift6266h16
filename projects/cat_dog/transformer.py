@@ -26,9 +26,13 @@ class ResizeTransformer(SourcewiseTransformer,ExpectsAxisLabels):
     def _resize(self, example, source_name):
         target_width, target_height = self.size
         original_height, original_width = example.shape[-2:]
-        if original_height != target_height and target_width != original_width:
+
+        if example.ndim != 3:
+            raise ValueError("The image dimension is {}".format(example.ndim))
+        if original_height != target_height or target_width != original_width:
             example = example.astype('float32')
             example = numpy.array([self._resize_layer(layer) for layer in example])
+
         return example
 
     def _resize_layer(self, layer):

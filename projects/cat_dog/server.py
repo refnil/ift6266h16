@@ -11,8 +11,9 @@ def tuple_parse(string):
         raise argparse.ArgumentTypeError("Need a width and height")
 
 def start_server(i,stream):
-    print("starting server " , i)
-    fuel_start_server(stream, 5557+i)
+    port = 5557 + i
+    print("starting server " , port)
+    fuel_start_server(stream, port)
 
 
 if __name__=="__main__":

@@ -3,12 +3,13 @@ from fuel.streams import ServerDataStream
 from datastream import get_dvc, get_mnist
 import os
 import time
+import numpy as np
 
 from theano import tensor
 from blocks.bricks import Rectifier, Softmax
-from blocks.bricks import MLP
-from blocks.bricks.conv import ConvolutionalSequence, Convolution, MaxPooling
-from blocks.initialization import IsotropicGaussian, Constant
+from blocks.bricks import MLP, FeedforwardSequence
+from blocks.bricks.conv import ConvolutionalSequence, Convolutional, MaxPooling, Flattener
+from blocks.initialization import IsotropicGaussian
 from blocks.main_loop import MainLoop
 from blocks.extensions import FinishAfter, Printing, Timing
 from blocks.algorithms import GradientDescent, Scale
@@ -19,13 +20,14 @@ from blocks.bricks.cost import CategoricalCrossEntropy, MisclassificationRate
 from blocks.roles import WEIGHT
 from blocks.graph import ComputationGraph, apply_dropout
 from blocks.filter import VariableFilter
+from blocks.initialization import Constant, Uniform
 
 from bricks import FinishIfNoImprovementAfterPlus, CheckpointBest
 
 def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stopping=False,
         finish=None, dropout=False,
         **ignored):
-    x = tensor.matrix('features')
+    x = tensor.tensor4('image_features')
     y = tensor.lmatrix('targets')
 
     y_hat = net.apply(x)
@@ -93,7 +95,7 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
 
     extensions.extend([
         Timing(),
-        Printing(every_n_epochs=5, after_epoch=None)
+        Printing()
         ])
 
     #Main loop
@@ -101,16 +103,39 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
 
     main_loop.run()
 
-def net_dvc():
-    convos = [9,7,5,3]
-    pools = [5,5,5,5]
+def net_dvc(image_size=(32,32)):
+    convos = [5,5]
+    pools = [3,3]
+    filters = [35,50]
 
     tuplify = lambda x: (x,x)
-    map(tuplify, convo)
-    map(tuplify, pools)
+    convos = list(map(tuplify, convos))
+    conv_layers = [Convolutional(filter_size=s,num_filters=o, num_channels=i) for s,o,i in zip(convos, filters, [3] + filters)]
 
+    pool_layers = [MaxPooling(p) for p in map(tuplify, pools)]
 
-    pass
+    activations = [Rectifier() for i in convos]
+
+    layers = [i for l in zip(conv_layers, activations, pool_layers) for i in l]
+
+    cnn = ConvolutionalSequence(layers, 3,  image_size=image_size, name="cnn",
+            weights_init=Uniform(width=.2),
+            biases_init=Constant(0))
+
+    cnn._push_allocation_config()
+    cnn_output = np.prod(cnn.get_dim('output'))
+
+    mlp_size = [cnn_output,20,2]
+    mlp = MLP([Rectifier(), Softmax()], mlp_size,  name="mlp",
+            weights_init=Uniform(width=.2),
+            biases_init=Constant(0))
+
+    seq = FeedforwardSequence([net.apply for net in [cnn,Flattener(),mlp]])
+    seq.push_initialization_config()
+
+    seq.initialize()
+    return seq
+
 
 def net_mnist():
     return  MLP(activations=[Rectifier(), Softmax()],
@@ -127,6 +152,7 @@ if __name__=="__main__":
     parser.add_argument('-e', '--early_stopping', action='store_true')
     parser.add_argument('-d', '--dropout', action='store_true')
     parser.add_argument('--finish', type=int)
+    parser.add_argument('--port', default= 5557, type=int)
     args = parser.parse_args()
 
     if args.mnist:
@@ -135,9 +161,10 @@ if __name__=="__main__":
     else:
         net = net_dvc()
         if args.parallel:
-            train = ServerDataStream(('train',), True, port=5571)
-            test = ServerDataStream(('test',), True, port=5572)
-            validation = ServerDataStream(('train'), True, port=5573)
+            sources = ('image_features','targets')
+            train = ServerDataStream(sources, True, port=args.port)
+            test = ServerDataStream(sources, True, port=args.port+1)
+            validation = ServerDataStream(sources, True, port=args.port+2)
         else:
             train, test, validation = get_dvc()
 
