@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -l walltime=01:00:00
+#PBS -l nodes=1:ppn=1
+#PBS -r n
+#PBS -q @hades
+ 
+module load CUDA
+cd ift6266h16/projects/cat_dog
+THEANO_FLAGS="device=gpu,floatX=float32,compiledir=$RAMDISK,nvcc.fastmath=True" python train.py -m --finish 10
+#python Test.py
