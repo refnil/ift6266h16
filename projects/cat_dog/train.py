@@ -163,9 +163,9 @@ if __name__=="__main__":
         if args.parallel:
             sources = ('image_features','targets')
             train = ServerDataStream(sources, True, port=args.port)
-            test = ServerDataStream(sources, True, port=args.port+1)
-            validation = ServerDataStream(sources, True, port=args.port+2)
+            valid = ServerDataStream(sources, True, port=args.port+1)
+            test = ServerDataStream(sources, True, port=args.port+2)
         else:
-            train, valid , test = get_dvc()
+            train, valid, test = get_dvc()
 
     train_net(net, train, test, **vars(args))
