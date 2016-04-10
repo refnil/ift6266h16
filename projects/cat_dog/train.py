@@ -70,8 +70,8 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
     extensions = []
 
     #Monitoring
-    monitor = DataStreamMonitoring(variables=[cost, error], data_stream=test_stream, prefix="test")
-    extensions.append(monitor)
+    #monitor = DataStreamMonitoring(variables=[cost, error], data_stream=test_stream, prefix="test")
+    #extensions.append(monitor)
 
     def filename(suffix=""):
         return "checkpoints/" + str(os.getpid()) + "_" + str(time.time()) + suffix + ".tar"
