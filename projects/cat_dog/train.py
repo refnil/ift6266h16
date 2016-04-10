@@ -70,8 +70,8 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
     extensions = []
 
     #Monitoring
-    #monitor = DataStreamMonitoring(variables=[cost, error], data_stream=test_stream, prefix="test")
-    #extensions.append(monitor)
+    monitor = DataStreamMonitoring(variables=[cost, error], data_stream=test_stream, prefix="test")
+    extensions.append(monitor)
 
     def filename(suffix=""):
         return "checkpoints/" + str(os.getpid()) + "_" + str(time.time()) + suffix + ".tar"
@@ -166,6 +166,6 @@ if __name__=="__main__":
             test = ServerDataStream(sources, True, port=args.port+1)
             validation = ServerDataStream(sources, True, port=args.port+2)
         else:
-            train, test, validation = get_dvc()
+            train, valid , test = get_dvc()
 
     train_net(net, train, test, **vars(args))
