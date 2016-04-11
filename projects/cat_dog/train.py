@@ -62,11 +62,13 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
     cost.name = 'cost_with_regularization'
 
     #Initialization
+    print("Initilization")
     net.initialize()
 
     #Algorithm
     algorithm = GradientDescent(cost=cost, parameters=cg.parameters, step_rule=Scale(learning_rate=0.1))
 
+    print("Extensions")
     extensions = []
 
     #Monitoring
@@ -101,6 +103,7 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
     #Main loop
     main_loop = MainLoop(data_stream=train_stream, algorithm=algorithm, extensions=extensions)
 
+    print("Main loop start")
     main_loop.run()
 
 def net_dvc(image_size=(32,32)):
