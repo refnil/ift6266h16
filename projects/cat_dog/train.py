@@ -14,7 +14,6 @@ from blocks.main_loop import MainLoop
 from blocks.extensions import FinishAfter, Printing, Timing
 from blocks.algorithms import GradientDescent, Scale
 from blocks.extensions.monitoring import DataStreamMonitoring
-from blocks.extensions.saveload import Checkpoint
 from blocks.extensions.training import TrackTheBest
 from blocks.bricks.cost import CategoricalCrossEntropy, MisclassificationRate
 from blocks.roles import WEIGHT
@@ -25,7 +24,7 @@ from blocks.initialization import Constant, Uniform
 from bricks import FinishIfNoImprovementAfterPlus, SaveBest
 
 def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stopping=False,
-        finish=None, dropout=False,
+        finish=None, dropout=False, jobid=None,
         **ignored):
     x = tensor.tensor4('image_features')
     y = tensor.lmatrix('targets')
@@ -76,7 +75,9 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
     extensions.append(monitor)
 
     def filename(suffix=""):
-        return "checkpoints/" + str(os.getpid()) + "_" + str(time.time()) + suffix + ".zip"
+        prefix = str(jobid) if jobid else str(os.getpid())
+        ctime = str(time.time())
+        return "checkpoints/" + prefix + "_" + ctime + "_" + suffix + ".zip"
 
     #Serialization
     #serialization = Checkpoint(filename())
@@ -85,7 +86,7 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
     notification = "test_cost_with_regularization"
     track = TrackTheBest(notification)
     best_notification = track.notification_name
-    checkpointbest = SaveBest(best_notification, filename("_best"))
+    checkpointbest = SaveBest(best_notification, filename("best"))
     extensions.extend([track, checkpointbest])
 
     if early_stopping:
@@ -155,6 +156,7 @@ if __name__=="__main__":
     parser.add_argument('--L2', action='store_true')
     parser.add_argument('-e', '--early_stopping', action='store_true')
     parser.add_argument('-d', '--dropout', action='store_true')
+    parser.add_argument('-j', '--jobid', type=int)
     parser.add_argument('--finish', type=int)
     parser.add_argument('--port', default= 5557, type=int)
     args = parser.parse_args()
