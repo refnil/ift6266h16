@@ -107,9 +107,9 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
     main_loop.run()
 
 def net_dvc(image_size=(32,32)):
-    convos = [5,5]
-    pools = [3,3]
-    filters = [35,50]
+    convos = [5,5,5]
+    pools = [3,3,3]
+    filters = [35,50,100]
 
     tuplify = lambda x: (x,x)
     convos = list(map(tuplify, convos))
@@ -158,17 +158,19 @@ if __name__=="__main__":
     parser.add_argument('--port', default= 5557, type=int)
     args = parser.parse_args()
 
+    image_size = (128,128)
+
     if args.mnist:
         train, test = get_mnist()
         net = net_mnist()
     else:
-        net = net_dvc()
+        net = net_dvc(image_size)
         if args.parallel:
             sources = ('image_features','targets')
             train = ServerDataStream(sources, True, port=args.port)
             valid = ServerDataStream(sources, True, port=args.port+1)
             test = ServerDataStream(sources, True, port=args.port+2)
         else:
-            train, valid, test = get_dvc()
+            train, valid , test = get_dvc(image_size)
 
     train_net(net, train, test, **vars(args))
