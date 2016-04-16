@@ -1,10 +1,11 @@
 #!/bin/bash
-#PBS -l walltime=01:00:00
-#PBS -l nodes=2:ppn=1
+#PBS -l walltime=12:00:00
+#PBS -l nodes=1:ppn=1
 #PBS -r n
 #PBS -q @hades
  
 module load CUDA
-cd ift6266h16/projects/cat_dog
-python server.py &
-THEANO_FLAGS="device=gpu,floatX=float32,compiledir=$RAMDISK,nvcc.fastmath=True" python train.py -p --finish 2
+cd $HOME/ift6266h16/projects/cat_dog
+RESULT_PATH=./result/$PBS_JOBID
+#python server.py &> $RESULT_PATH.server &
+THEANO_FLAGS="device=gpu,floatX=float32,nvcc.fastmath=True" python train.py -e --L1 --L2 > $RESULT_PATH.out 2> $RESULT_PATH.err
