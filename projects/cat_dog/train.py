@@ -22,7 +22,7 @@ from blocks.graph import ComputationGraph, apply_dropout
 from blocks.filter import VariableFilter
 from blocks.initialization import Constant, Uniform
 
-from bricks import FinishIfNoImprovementAfterPlus, CheckpointBest
+from bricks import FinishIfNoImprovementAfterPlus, SaveBest
 
 def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stopping=False,
         finish=None, dropout=False,
@@ -76,19 +76,20 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
     extensions.append(monitor)
 
     def filename(suffix=""):
-        return "checkpoints/" + str(os.getpid()) + "_" + str(time.time()) + suffix + ".tar"
+        return "checkpoints/" + str(os.getpid()) + "_" + str(time.time()) + suffix + ".zip"
 
     #Serialization
-    serialization = Checkpoint(filename())
-    extensions.append(serialization)
+    #serialization = Checkpoint(filename())
+    #extensions.append(serialization)
 
     notification = "test_cost_with_regularization"
     track = TrackTheBest(notification)
-    checkpointbest = CheckpointBest(notification, filename("_best"))
+    best_notification = track.notification_name
+    checkpointbest = SaveBest(best_notification, filename("_best"))
     extensions.extend([track, checkpointbest])
 
     if early_stopping:
-        stopper = FinishIfNoImprovementAfterPlus("test_cost_with_regularization_best_so_far")
+        stopper = FinishIfNoImprovementAfterPlus(best_notification)
         extensions.append(stopper)
 
     #Other extensions
