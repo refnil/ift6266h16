@@ -1,21 +1,32 @@
-from fuel.schemes import ShuffledScheme
+from fuel.schemes import ShuffledScheme, SequentialScheme
 from fuel.streams import DataStream
 from fuel.datasets import DogsVsCats, MNIST
 from fuel.transformers import Flatten
 from transformer import ResizeTransformer
 
+def get_dvc(image_size=(32,32), trainning=True, shortcut=False):
 
-def get_dvc(image_size=(32,32), batch_size=64, scheme=ShuffledScheme):
-    train = DogsVsCats(('train',), subset=slice(0, 22500))
+    if shortcut:
+        subset_train = slice(0,35)
+        subset_validation = slice(22500,22505)
+    else:
+        subset_train = slice(0,22500)
+        subset_validation = slice(22500,25000)
+
+
+    train = DogsVsCats(('train',), subset=subset_train)
     test = DogsVsCats(('test',), )
-    validation = DogsVsCats(('train',), subset=slice(22500, 25000))
+    validation = DogsVsCats(('train',), subset=subset_validation)
 
-    def ResizeAndStream(dataset):
-        stream = DataStream.default_stream(dataset, iteration_scheme=scheme(dataset.num_examples, batch_size))
+    def create_dataset(dataset):
+        if trainning:
+            scheme = ShuffledScheme(dataset.num_examples, 64)
+        else:
+            scheme = SequentialScheme(dataset.num_examples, 64)
+        stream = DataStream.default_stream(dataset, iteration_scheme=scheme)
         return ResizeTransformer(stream, image_size)
 
-    rs = ResizeAndStream
-    return rs(train), rs(test), rs(validation)
+    return map(create_dataset, [train,test,validation])
 
 
 def get_mnist():

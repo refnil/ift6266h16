@@ -120,7 +120,8 @@ def net_dvc(image_size=(32,32)):
 
     tuplify = lambda x: (x,x)
     convos = list(map(tuplify, convos))
-    conv_layers = [Convolutional(filter_size=s,num_filters=o, num_channels=i) for s,o,i in zip(convos, filters, [3] + filters)]
+    conv_layers = [Convolutional(filter_size=s,num_filters=o, num_channels=i, name="Conv"+str(n))\
+            for s,o,i,n in zip(convos, filters, [3] + filters, range(1000))]
 
     pool_layers = [MaxPooling(p) for p in map(tuplify, pools)]
 
@@ -162,6 +163,7 @@ if __name__=="__main__":
     parser.add_argument('-e', '--early_stopping', action='store_true')
     parser.add_argument('-d', '--dropout', action='store_true')
     parser.add_argument('-j', '--jobid')
+    parser.add_argument('-s', '--small', action='store_true')
     parser.add_argument('--finish', type=int)
     parser.add_argument('--port', default= 5557, type=int)
     args = parser.parse_args()
@@ -179,6 +181,6 @@ if __name__=="__main__":
             valid = ServerDataStream(sources, True, port=args.port+1)
             test = ServerDataStream(sources, True, port=args.port+2)
         else:
-            train, valid , test = get_dvc(image_size)
+            train, valid , test = get_dvc(image_size, shortcut = args.small)
 
     train_net(net, train, test, **vars(args))
