@@ -75,7 +75,7 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
     extensions.append(monitor)
 
     def filename(suffix=""):
-        prefix = str(jobid) if jobid else str(os.getpid())
+        prefix = jobid if jobid else str(os.getpid())
         ctime = str(time.time())
         return "checkpoints/" + prefix + "_" + ctime + "_" + suffix + ".zip"
 
@@ -156,7 +156,7 @@ if __name__=="__main__":
     parser.add_argument('--L2', action='store_true')
     parser.add_argument('-e', '--early_stopping', action='store_true')
     parser.add_argument('-d', '--dropout', action='store_true')
-    parser.add_argument('-j', '--jobid', type=int)
+    parser.add_argument('-j', '--jobid')
     parser.add_argument('--finish', type=int)
     parser.add_argument('--port', default= 5557, type=int)
     args = parser.parse_args()
