@@ -45,14 +45,17 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
     WS = VariableFilter(roles=[WEIGHT])(cg.variables)
 
     if dropout:
+        print("Dropout")
         cg = apply_dropout(cg, WS, 0.5)
 
     if L1:
+        print("L1")
         L1_reg = 0.005 * sum([abs(W).sum() for W in WS])
         L1_reg.name = "L1 regularization"
         cost_before += L1_reg
 
     if L2:
+        print("L2")
         L2_reg = 0.005 * sum([(W ** 2).sum() for W in WS])
         L2_reg.name = "L2 regularization"
         cost_before += L2_reg
@@ -90,11 +93,13 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
     extensions.extend([track, checkpointbest])
 
     if early_stopping:
+        print("Early stopping")
         stopper = FinishIfNoImprovementAfterPlus(best_notification)
         extensions.append(stopper)
 
     #Other extensions
     if finish != None:
+        print("Force finish ", finish)
         extensions.append(FinishAfter(after_n_epochs=finish))
 
     extensions.extend([

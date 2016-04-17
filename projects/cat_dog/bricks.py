@@ -158,7 +158,7 @@ class Save(SimpleExtension):
             path = self.path
             if from_user:
                 path, = from_user
-            secure_dump(self.main_loop, path, use_cpickle=self.use_cpickle)
+            secure_dump(self.get_save(), path, use_cpickle=self.use_cpickle)
             filenames = self.save_separately_filenames(path)
             for attribute in self.save_separately:
                 secure_dump(getattr(self.main_loop, attribute),
@@ -179,7 +179,7 @@ class SaveBest(Save):
         super(SaveBest, self).__init__(path, **kwargs)
 
     def get_save(self):
-        return self.main_loop.algorithm #._cost_computation_graph
+        return self.main_loop.algorithm._cost_computation_graph
 
     def do(self, which_callback, *args):
         if self.notification_name in self.main_loop.log.current_row:
