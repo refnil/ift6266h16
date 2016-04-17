@@ -154,7 +154,7 @@ def net_mnist():
               weights_init=IsotropicGaussian(),
               biases_init=Constant(0.))
 
-if __name__=="__main__":
+def main(args):
     parser = argparse.ArgumentParser(description='train')
     parser.add_argument('-p', '--parallel', action='store_true')
     parser.add_argument('-m', '--mnist', action='store_true')
@@ -166,7 +166,7 @@ if __name__=="__main__":
     parser.add_argument('-s', '--small', action='store_true')
     parser.add_argument('--finish', type=int)
     parser.add_argument('--port', default= 5557, type=int)
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     image_size = (128,128)
 
@@ -184,3 +184,8 @@ if __name__=="__main__":
             train, valid , test = get_dvc(image_size, shortcut = args.small)
 
     train_net(net, train, test, **vars(args))
+
+
+if __name__=="__main__":
+    import sys
+    main(sys.argv[1:])
