@@ -155,6 +155,7 @@ def net_mnist():
               biases_init=Constant(0.))
 
 def main(args):
+    print(args)
     parser = argparse.ArgumentParser(description='train')
     parser.add_argument('-p', '--parallel', action='store_true')
     parser.add_argument('-m', '--mnist', action='store_true')
