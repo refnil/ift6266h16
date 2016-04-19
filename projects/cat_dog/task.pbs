@@ -6,7 +6,7 @@
  
 module load CUDA
 cd $HOME/ift6266h16/projects/cat_dog
-NAME=$PBS_JOBID$PBS_ARRAYID
+NAME=$PBS_JOBID
 RESULT_PATH=./result/$NAME
 echo $NAME
 THEANO_FLAGS="device=gpu,floatX=float32,nvcc.fastmath=True,compiledir=$RAMDISK" python train.py -j $NAME --finish 1 -s > $RESULT_PATH.out 2> $RESULT_PATH.err

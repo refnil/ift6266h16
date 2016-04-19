@@ -69,9 +69,11 @@ def main(argv):
 
         return equal/total
 
-    print("Training accuracy: ", accuracy(a), "\n")
-    print("Test accuracy: ", accuracy(v), "\n")
-    with open(join(result_folder, name+".kaggle")) as f:
+    print("Training accuracy: ", accuracy(a))
+    print("Test accuracy: ", accuracy(v))
+    kaggle = join(result_folder, name+".kaggle")
+    print(kaggle)
+    with open(kaggle,'w') as f:
             kaggle(f, t)
 
 
