@@ -16,6 +16,9 @@ def main(argv):
     file = next(filter(lambda n: name in n, files))
     print(file)
 
+    for k,v in file.items():
+        file[k] = v.astype('float32')
+
     p = load_parameter_values(file)
 
     net = net_dvc((128,128))
