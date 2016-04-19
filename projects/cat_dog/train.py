@@ -12,7 +12,7 @@ from blocks.bricks.conv import ConvolutionalSequence, Convolutional, MaxPooling,
 from blocks.initialization import IsotropicGaussian
 from blocks.main_loop import MainLoop
 from blocks.extensions import FinishAfter, Printing, Timing
-from blocks.algorithms import GradientDescent, Scale
+from blocks.algorithms import GradientDescent, Scale, RMSProp
 from blocks.extensions.monitoring import DataStreamMonitoring
 from blocks.extensions.training import TrackTheBest
 from blocks.bricks.cost import CategoricalCrossEntropy, MisclassificationRate
@@ -23,8 +23,8 @@ from blocks.initialization import Constant, Uniform
 
 from bricks import FinishIfNoImprovementAfterPlus, SaveBest
 
-def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stopping=False,
-        finish=None, dropout=False, jobid=None,
+def train_net(net, train_stream, test_stream, L1 = None, L2=None, early_stopping=False,
+        finish=None, dropout=False, jobid=None, update=None,
         **ignored):
     x = tensor.tensor4('image_features')
     y = tensor.lmatrix('targets')
@@ -49,14 +49,14 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
         cg = apply_dropout(cg, WS, 0.5)
 
     if L1:
-        print("L1")
-        L1_reg = 0.005 * sum([abs(W).sum() for W in WS])
+        print("L1 with lambda ",L1)
+        L1_reg = L1 * sum([abs(W).sum() for W in WS])
         L1_reg.name = "L1 regularization"
         cost_before += L1_reg
 
     if L2:
-        print("L2")
-        L2_reg = 0.005 * sum([(W ** 2).sum() for W in WS])
+        print("L2 with lambda ",L1)
+        L2_reg = L2 * sum([(W ** 2).sum() for W in WS])
         L2_reg.name = "L2 regularization"
         cost_before += L2_reg
 
@@ -68,7 +68,12 @@ def train_net(net, train_stream, test_stream, L1 = False, L2=False, early_stoppi
     net.initialize()
 
     #Algorithm
-    algorithm = GradientDescent(cost=cost, parameters=cg.parameters, step_rule=Scale(learning_rate=0.1))
+    step_rule = Scale(learning_rate=0.1)
+    if update is not None:
+        if update == "rmsprop":
+            print("Using RMSProp")
+            step_rule = RMSProp()
+    algorithm = GradientDescent(cost=cost, parameters=cg.parameters, step_rule=step_rule)
 
     print("Extensions")
     extensions = []
@@ -159,13 +164,14 @@ def main(args):
     parser = argparse.ArgumentParser(description='train')
     parser.add_argument('-p', '--parallel', action='store_true')
     parser.add_argument('-m', '--mnist', action='store_true')
-    parser.add_argument('--L1', action='store_true')
-    parser.add_argument('--L2', action='store_true')
+    parser.add_argument('--L1', type=float)
+    parser.add_argument('--L2', type=float)
     parser.add_argument('-e', '--early_stopping', action='store_true')
     parser.add_argument('-d', '--dropout', action='store_true')
     parser.add_argument('-j', '--jobid')
     parser.add_argument('-s', '--small', action='store_true')
-    parser.add_argument('--finish', type=int)
+    parser.add_argument('-u', '--update', choices=["rmsprop"])
+    parser.add_argument('-f', '--finish', type=int)
     parser.add_argument('--port', default= 5557, type=int)
     args = parser.parse_args(args)
 
