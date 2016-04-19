@@ -16,9 +16,6 @@ def main(argv):
     file = next(filter(lambda n: name in n, files))
     print(file)
 
-    for k,v in file.items():
-        file[k] = v.astype('float32')
-
     p = load_parameter_values(file)
 
     net = net_dvc((128,128))
@@ -27,6 +24,10 @@ def main(argv):
     y_hat = net.apply(x)
 
     g = Model(y_hat)
+
+    for k,v in p.items():
+        p[k] = v.astype('float32')
+
     g.set_parameter_values(p)
 
     a,t,v = get_dvc((128,128),trainning=False, shortcut=False)
