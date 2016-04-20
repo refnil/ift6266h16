@@ -73,7 +73,7 @@ def main(argv):
     print("Test accuracy: ", accuracy(v))
     kaggle_file = join(result_folder, name+".kaggle")
     print(kaggle_file)
-    with open(kaggle,'w') as f:
+    with open(kaggle_file,'w') as f:
             kaggle(f, t)
 
 
