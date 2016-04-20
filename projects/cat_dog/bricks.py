@@ -185,3 +185,15 @@ class SaveBest(Save):
         if self.notification_name in self.main_loop.log.current_row:
             super(SaveBest, self).do(which_callback, *args)
 
+import time
+class FinishAfterTime(SimpleExtension):
+    """Finishes the training process when triggered."""
+    def __init__(self, seconds, **kwargs):
+        kwargs.setdefault("after_epoch",True)
+        self.seconds = seconds
+        self.start = time.time()
+        super(FinishAfterTime, self).__init__(**kwargs)
+
+    def do(self, which_callback, *args):
+        if self.start + self.seconds < time.time():
+            self.main_loop.log.current_row['training_finish_requested'] = True
