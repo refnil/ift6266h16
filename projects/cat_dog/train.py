@@ -21,10 +21,11 @@ from blocks.graph import ComputationGraph, apply_dropout
 from blocks.filter import VariableFilter
 from blocks.initialization import Constant, Uniform
 
-from bricks import FinishIfNoImprovementAfterPlus, SaveBest
+from bricks import FinishIfNoImprovementAfterPlus, SaveBest, FinishAfterTime
 
 def train_net(net, train_stream, test_stream, L1 = None, L2=None, early_stopping=False,
         finish=None, dropout=False, jobid=None, update=None,
+        duration= None,
         **ignored):
     x = tensor.tensor4('image_features')
     y = tensor.lmatrix('targets')
@@ -107,6 +108,10 @@ def train_net(net, train_stream, test_stream, L1 = None, L2=None, early_stopping
         print("Force finish ", finish)
         extensions.append(FinishAfter(after_n_epochs=finish))
 
+    if duration != None:
+        print("Stop after " , duration, " seconds")
+        extensions.append(FinishAfterTime(duration))
+
     extensions.extend([
         Timing(),
         Printing()
@@ -119,9 +124,9 @@ def train_net(net, train_stream, test_stream, L1 = None, L2=None, early_stopping
     main_loop.run()
 
 def net_dvc(image_size=(32,32)):
-    convos = [5,5,5]
-    pools = [3,3,3]
-    filters = [35,50,100]
+    convos = [5,5,5,5,2]
+    pools = [2,2,2,2,2]
+    filters = [100,150,200,300,400]
 
     tuplify = lambda x: (x,x)
     convos = list(map(tuplify, convos))
@@ -135,13 +140,13 @@ def net_dvc(image_size=(32,32)):
     layers = [i for l in zip(conv_layers, activations, pool_layers) for i in l]
 
     cnn = ConvolutionalSequence(layers, 3,  image_size=image_size, name="cnn",
-            weights_init=Uniform(width=.2),
+            weights_init=Uniform(width=.3),
             biases_init=Constant(0))
 
     cnn._push_allocation_config()
     cnn_output = np.prod(cnn.get_dim('output'))
 
-    mlp_size = [cnn_output,20,2]
+    mlp_size = [cnn_output,500,2]
     mlp = MLP([Rectifier(), Softmax()], mlp_size,  name="mlp",
             weights_init=Uniform(width=.2),
             biases_init=Constant(0))
@@ -172,6 +177,8 @@ def main(args):
     parser.add_argument('-s', '--small', action='store_true')
     parser.add_argument('-u', '--update', choices=["rmsprop"])
     parser.add_argument('-f', '--finish', type=int)
+    parser.add_argument('-t', '--duration', type=int)
+    parser.add_argument('-a', '--augmentation', action='store_true')
     parser.add_argument('--port', default= 5557, type=int)
     args = parser.parse_args(args)
 
@@ -188,7 +195,7 @@ def main(args):
             valid = ServerDataStream(sources, True, port=args.port+1)
             test = ServerDataStream(sources, True, port=args.port+2)
         else:
-            train, valid , test = get_dvc(image_size, shortcut = args.small)
+            train, valid , test = get_dvc(image_size, shortcut = args.small, augmentation = args.augmentation)
 
     train_net(net, train, test, **vars(args))
 

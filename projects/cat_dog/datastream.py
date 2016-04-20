@@ -2,9 +2,9 @@ from fuel.schemes import ShuffledScheme, SequentialScheme
 from fuel.streams import DataStream
 from fuel.datasets import DogsVsCats, MNIST
 from fuel.transformers import Flatten
-from transformer import ResizeTransformer
+from transformer import ResizeTransformer, DataAugmentation
 
-def get_dvc(image_size=(32,32), trainning=True, shortcut=False):
+def get_dvc(image_size=(32,32), trainning=True, shortcut=False,augmentation=False):
 
     if shortcut:
         subset_train = slice(0,35)
@@ -26,7 +26,10 @@ def get_dvc(image_size=(32,32), trainning=True, shortcut=False):
         stream = DataStream.default_stream(dataset, iteration_scheme=scheme)
         return ResizeTransformer(stream, image_size)
 
-    return map(create_dataset, [train,test,validation])
+    streams = list(map(create_dataset, [train,test,validation]))
+    if augmentation:
+        streams[0] = DataAugmentation(streams[0])
+    return streams
 
 
 def get_mnist():

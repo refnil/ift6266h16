@@ -3,18 +3,18 @@ from itertools import product
 def optional(l):
     return l+[""]
 
-def lambda_generator(i):
-    return str([0.01, 0.05, 0.1][i])
+def lambda_generator(i=0):
     from random import uniform
     return str(uniform(0.01,0.2))
 
 dropout = optional(["-d"])
-l1 = ["--L1 " + lambda_generator(i) for i in range(2)]
-l2 = ["--L2 " + lambda_generator(i) for i in range(2)]
+l1 = ["--L1 " + lambda_generator()]
+l2 = ["--L2 " + lambda_generator()]
 update = optional(["-u rmsprop"])
+data= optional(["-a"])
 
-std_parameters = ["--finish 30", "-e"]
-variable_parameters = [dropout, l1, l2, update]
+std_parameters = ["-t 27000" , "-e"]
+variable_parameters = [dropout, l1, l2, update, data]
 
 def create_parameters_list(std, var):
     def extend(l):
