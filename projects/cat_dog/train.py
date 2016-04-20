@@ -12,7 +12,7 @@ from blocks.bricks.conv import ConvolutionalSequence, Convolutional, MaxPooling,
 from blocks.initialization import IsotropicGaussian
 from blocks.main_loop import MainLoop
 from blocks.extensions import FinishAfter, Printing, Timing
-from blocks.algorithms import GradientDescent, Scale, RMSProp
+from blocks.algorithms import GradientDescent, Scale, RMSProp, RemoveNotFinite, CompositeRule
 from blocks.extensions.monitoring import DataStreamMonitoring
 from blocks.extensions.training import TrackTheBest
 from blocks.bricks.cost import CategoricalCrossEntropy, MisclassificationRate
@@ -56,7 +56,7 @@ def train_net(net, train_stream, test_stream, L1 = None, L2=None, early_stopping
         cost_before += L1_reg
 
     if L2:
-        print("L2 with lambda ",L1)
+        print("L2 with lambda ",L2)
         L2_reg = L2 * sum([(W ** 2).sum() for W in WS])
         L2_reg.name = "L2 regularization"
         cost_before += L2_reg
@@ -74,6 +74,9 @@ def train_net(net, train_stream, test_stream, L1 = None, L2=None, early_stopping
         if update == "rmsprop":
             print("Using RMSProp")
             step_rule = RMSProp()
+
+    remove_not_finite = RemoveNotFinite(0.9)
+    step_rule = CompositeRule([step_rule, remove_not_finite])
     algorithm = GradientDescent(cost=cost, parameters=cg.parameters, step_rule=step_rule)
 
     print("Extensions")
@@ -92,7 +95,7 @@ def train_net(net, train_stream, test_stream, L1 = None, L2=None, early_stopping
     #serialization = Checkpoint(filename())
     #extensions.append(serialization)
 
-    notification = "test_cost_with_regularization"
+    notification = "test_"+error.name
     track = TrackTheBest(notification)
     best_notification = track.notification_name
     checkpointbest = SaveBest(best_notification, filename("best"))
@@ -124,9 +127,9 @@ def train_net(net, train_stream, test_stream, L1 = None, L2=None, early_stopping
     main_loop.run()
 
 def net_dvc(image_size=(32,32)):
-    convos = [5,5,5,5,2]
-    pools = [2,2,2,2,2]
-    filters = [100,150,200,300,400]
+    convos = [5,5,5]
+    pools = [2,2,2]
+    filters = [100,200,300]
 
     tuplify = lambda x: (x,x)
     convos = list(map(tuplify, convos))
@@ -140,7 +143,7 @@ def net_dvc(image_size=(32,32)):
     layers = [i for l in zip(conv_layers, activations, pool_layers) for i in l]
 
     cnn = ConvolutionalSequence(layers, 3,  image_size=image_size, name="cnn",
-            weights_init=Uniform(width=.3),
+            weights_init=Uniform(width=.1),
             biases_init=Constant(0))
 
     cnn._push_allocation_config()
@@ -148,7 +151,7 @@ def net_dvc(image_size=(32,32)):
 
     mlp_size = [cnn_output,500,2]
     mlp = MLP([Rectifier(), Softmax()], mlp_size,  name="mlp",
-            weights_init=Uniform(width=.2),
+            weights_init=Uniform(width=.1),
             biases_init=Constant(0))
 
     seq = FeedforwardSequence([net.apply for net in [cnn,Flattener(),mlp]])
