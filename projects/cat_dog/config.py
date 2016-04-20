@@ -9,8 +9,8 @@ def lambda_generator(i):
     return str(uniform(0.01,0.2))
 
 dropout = optional(["-d"])
-l1 = optional(["--L1 " + lambda_generator(i) for i in range(3)])
-l2 = optional(["--L2 " + lambda_generator(i) for i in range(3)])
+l1 = ["--L1 " + lambda_generator(i) for i in range(2)]
+l2 = ["--L2 " + lambda_generator(i) for i in range(2)]
 update = optional(["-u rmsprop"])
 
 std_parameters = ["--finish 30", "-e"]
