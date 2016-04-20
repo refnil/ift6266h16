@@ -1,3 +1,6 @@
 checkpoints/
 result/
 .ipynb_checkpoints/
+*.o*
+*.id
+*.e*

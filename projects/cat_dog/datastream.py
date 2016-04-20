@@ -20,9 +20,9 @@ def get_dvc(image_size=(32,32), trainning=True, shortcut=False,augmentation=Fals
 
     def create_dataset(dataset):
         if trainning:
-            scheme = ShuffledScheme(dataset.num_examples, 64)
+            scheme = ShuffledScheme(dataset.num_examples, 32)
         else:
-            scheme = SequentialScheme(dataset.num_examples, 64)
+            scheme = SequentialScheme(dataset.num_examples, 32)
         stream = DataStream.default_stream(dataset, iteration_scheme=scheme)
         return ResizeTransformer(stream, image_size)
 
